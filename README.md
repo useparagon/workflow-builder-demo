@@ -7,6 +7,8 @@ Examples include:
 - Querying from Salesforce
 - Sending an email via Gmail
 - Getting a Notion page
+
+
 This demo uses Paragon for all integration-related functionality including authentication, credential management, and 3rd-party 
 APIs powered by ActionKit
 
