@@ -1,11 +1,12 @@
-import { ReactFlow, Controls, Background, applyEdgeChanges, applyNodeChanges, addEdge } from '@xyflow/react';
+import { ReactFlow, Controls, Background } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ReactflowSidebar } from './reactflow-sidebar';
 import { ActionNode } from './nodes/ActionNode';
 import { TriggerNode } from './nodes/TriggerNode';
 import { useShallow } from 'zustand/react/shallow';
 import useStore from '@/app/store/store';
+import { toast } from 'react-toastify';
 
 const selector = (state: any) => ({
 	nodes: state.nodes,
@@ -19,7 +20,28 @@ function ReactflowPlayground() {
 	const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = useStore(
 		useShallow(selector),
 	);
-	const [newId, setNewId] = useState<number>(0);
+	const [playgroundState, setPlaygroundState] = useState<{ newId: number, sidebarOutput: any, triggerWorkflow: () => Promise<void> }>({ newId: 0, sidebarOutput: {}, triggerWorkflow: async () => { return } });
+	const setNodes = useStore((state) => state.setNodes);
+
+	const runWorkflow = async () => {
+		toast.success("running workflow");
+		const currentState = useStore.getState();
+		const curNodes = currentState.nodes;
+		const curEdges = currentState.edges;
+
+		const headers = new Headers();
+		headers.append("Content-Type", "application/json");
+		headers.append("Authorization", "Bearer " + sessionStorage.getItem("jwt"));
+
+		const response = await fetch(window.location.href + "/api/workflow", {
+			method: "POST",
+			headers: headers,
+			body: JSON.stringify({ nodes: curNodes, edges: curEdges })
+		});
+		const body = await response.json();
+		console.log(body);
+		setPlaygroundState((prev) => ({ ...prev, sidebarOutput: JSON.stringify(body.body).replaceAll(",", ",\n") }));
+	}
 
 	useEffect(() => {
 		let largest = 0;
@@ -28,7 +50,16 @@ function ReactflowPlayground() {
 				largest = Number(node.id);
 			}
 		}
-		setNewId(largest + 1);
+		if (nodes.length === 0) {
+			setNodes([...nodes, {
+				id: String(playgroundState.newId),
+				data: { id: String(playgroundState.newId), label: "Trigger", triggerWorkflow: runWorkflow },
+				position: { x: (playgroundState.newId * 100) + 100, y: (playgroundState.newId * 100) + 100 },
+				type: 'triggerNode'
+			}]);
+
+		}
+		setPlaygroundState((prev) => ({ ...prev, newId: largest + 1, triggerWorkflow: runWorkflow }));
 	}, [nodes]);
 
 
@@ -44,7 +75,8 @@ function ReactflowPlayground() {
 				<Background />
 				<Controls />
 			</ReactFlow>
-			<ReactflowSidebar nodes={nodes} edges={edges} newId={newId}></ReactflowSidebar>
+			<ReactflowSidebar nodes={nodes} edges={edges} newId={playgroundState.newId}
+				workflowOutput={playgroundState.sidebarOutput} triggerWorkflow={playgroundState.triggerWorkflow}></ReactflowSidebar>
 		</div >
 	);
 }

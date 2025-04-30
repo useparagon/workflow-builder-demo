@@ -4,6 +4,7 @@ import { performAction } from "../test-step/route";
 export async function POST(request: NextRequest) {
 	try {
 		const contents = await request.json();
+		console.log(contents);
 		const headers = request.headers;
 		if (headers.get("authorization")) {
 			const token = headers.get("authorization")?.split(" ")[1];
@@ -26,13 +27,15 @@ export async function POST(request: NextRequest) {
 					nodeMap.set(node.id, node.data.funcProperties);
 				}
 
-				queue.push('1');
+				queue.push('0');
 				while (queue.length > 0) {
 					const nodeId = queue.shift();
 					console.log(nodeId);
-					const selectedNode = nodeMap.get(nodeId);
-					let res = await performWorkflowAction(resMap, token, selectedNode)
-					resMap.set(nodeId, res);
+					if (nodeId !== '0') {
+						const selectedNode = nodeMap.get(nodeId);
+						let res = await performWorkflowAction(resMap, token, selectedNode)
+						resMap.set(nodeId, res);
+					}
 					if (edgeMap.has(nodeId)) {
 						for (const id of edgeMap.get(nodeId)) {
 							queue.push(id);

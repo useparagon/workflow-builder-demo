@@ -1,10 +1,8 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { useState } from 'react';
 import useStore from '@/app/store/store';
 
 export function ActionNode({ data }: { data: any }) {
-	const [params, setParams] = useState<{ parameters: any, output: string }>({ parameters: {}, output: "" });
 	const setSelectedNode = useStore((state) => state.setSelectedNode);
 
 	useEffect(() => {
@@ -21,7 +19,7 @@ export function ActionNode({ data }: { data: any }) {
 
 	return (
 		<>
-			{data.label.charAt(0) !== '1' && <Handle type="target" position={Position.Top} />}
+			<Handle type="target" position={Position.Top} />
 			<div className='flex flex-col rounded-lg border-2 bg-stone-100 p-4 space-y-2'>
 				<div className='flex space-x-2'>
 					<img src={data.pic} style={{ maxWidth: "30px" }} />

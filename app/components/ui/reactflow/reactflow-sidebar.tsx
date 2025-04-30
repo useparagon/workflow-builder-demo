@@ -3,8 +3,9 @@ import { paragon } from "@useparagon/connect";
 import useParagon from "@/app/hooks/useParagon";
 import { ActionButton } from "./nodes/ActionButton";
 import useStore from "@/app/store/store";
+import { toast } from "react-toastify";
 
-export const ReactflowSidebar = ({ nodes, edges, newId }: { nodes: Array<any>, edges: any, newId: number }) => {
+export const ReactflowSidebar = ({ nodes, edges, newId, workflowOutput, triggerWorkflow }: { nodes: Array<any>, edges: any, newId: number, workflowOutput: any, triggerWorkflow: () => Promise<void> }) => {
 	const [sidebarState, setSidebarState] = useState<{ integrations: Array<any>, actions: any, activeDropdown: string, output: string, paramInputs: any }>({
 		integrations: [], actions: {}, activeDropdown: "", output: "", paramInputs: {}
 	});
@@ -29,6 +30,10 @@ export const ReactflowSidebar = ({ nodes, edges, newId }: { nodes: Array<any>, e
 		});
 	}, []);
 
+	useEffect(() => {
+		setSidebarState((prev) => ({ ...prev, output: workflowOutput }));
+	}, [workflowOutput]);
+
 	const toggleDropdown = (integrationName: string) => {
 		setSidebarState((prev) => ({ ...prev, activeDropdown: prev.activeDropdown === integrationName ? "" : integrationName }));
 	}
@@ -46,22 +51,6 @@ export const ReactflowSidebar = ({ nodes, edges, newId }: { nodes: Array<any>, e
 	const clearWorkflow = () => {
 		setNodes([]);
 		setEdges([]);
-	}
-
-	const triggerWorkflow = async () => {
-		const headers = new Headers();
-		headers.append("Content-Type", "application/json");
-		headers.append("Authorization", "Bearer " + sessionStorage.getItem("jwt"));
-
-
-		const response = await fetch(window.location.href + "/api/workflow", {
-			method: "POST",
-			headers: headers,
-			body: JSON.stringify({ nodes: nodes, edges: edges })
-		});
-		const body = await response.json();
-		console.log(body);
-		setSidebarState((prev) => ({ ...prev, output: JSON.stringify(body.body).replaceAll(",", ",\n") }));
 	}
 
 	const fetchIntegrationMetadata = async () => {
@@ -114,6 +103,7 @@ export const ReactflowSidebar = ({ nodes, edges, newId }: { nodes: Array<any>, e
 
 
 	const testStep = async () => {
+		toast.success("testing step");
 		const url = window.location.href + "/api/test-step";
 		const headers = new Headers();
 		headers.append("Content-Type", "application/json");
@@ -168,7 +158,7 @@ export const ReactflowSidebar = ({ nodes, edges, newId }: { nodes: Array<any>, e
 						{
 							integration.type === sidebarState.activeDropdown &&
 							<div className="flex flex-col space-y-2 mt-2">
-								{sidebarState.actions[integration.type]?.map((action: any) => {
+								{sidebarState.actions.actions[integration.type]?.map((action: any) => {
 									return (
 										<ActionButton key={action.function.name} action={action} addNode={addNode} pic={integration.icon} />);
 								})}
